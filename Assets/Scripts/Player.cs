@@ -28,7 +28,8 @@ public class Player : MonoBehaviour
 
     float xInput, yInput;
     Vector2[] log_positions;
-    Vector2 targetpos;
+    Vector2 targetpos_mouse;
+    Vector2 targetpos_arrows;
     Rigidbody2D rb;
     DateTime dt_inizio;
     SpriteRenderer sp;
@@ -66,10 +67,168 @@ public class Player : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+
+
+        check_mouse_click();//leave in Update() due to otherwise it will not catch when you release the click
+
+
+
+
+    }
+    private void FixedUpdate()
+    {//Questa funzione viene eseguita anche se non ci sono update
+
+        check_timer_caduta();
+        
+        if_arrows_click_move();
+  
+        if_mouseClick_move();
+            
+        FlipPlayer();
+
+        update_log();
+
+
+
+    }
+    bool if_arrows_click_move()
+    {
+        if (Caduta_in_corso)
+            return false;
+
+        xInput = Input.GetAxis("Horizontal");
+        yInput = Input.GetAxis("Vertical");
+        if (Math.Abs(xInput) < 0.3f)
+            xInput = 0;
+        if (Math.Abs(yInput) < 0.3f)
+            yInput = 0;
+
+        if (xInput == 0f && yInput == 0f)
+            return false;
+
+        transform.Translate(xInput * moveSpeed * Time.deltaTime, yInput * moveSpeed * Time.deltaTime, 0);
+        return true;
+
+    }
+    bool check_mouse_click()
+    {
+        if (Caduta_in_corso)
+            return false;
+
+        
         //Mouse control:
         Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         mousePos.z = 10f;
+        if (Input.GetMouseButtonDown(0))
+        {
+            targetpos_mouse = mousePos;
+           mouse_click_not_processed = true;
+        }
+        if (Input.GetMouseButtonUp(0))
+        {
+           mouse_click_not_processed = false;
+        }
+        
+        return true;
+    }
+    bool if_mouseClick_move()
+    {
+        if (!mouse_click_not_processed)
+            return false;
 
+        textElement.text = targetpos_mouse.x.ToString() + "-" + targetpos_mouse.y.ToString();
+        if (targetpos_mouse.x > 7.8f || targetpos_mouse.y > 2f || targetpos_mouse.y < -5.4f || targetpos_mouse.x < -5f)
+        {
+            mouse_click_not_processed = false;
+            return false;
+            
+        }
+
+        transform.position = Vector3.MoveTowards(transform.position, targetpos_mouse, moveSpeed*Time.deltaTime);
+        return true;
+    }
+    void update_log()
+    {
+        if (index_log_pos < max_length_array_log)
+        {
+            //log_positions[index_log_pos] = transform.position;
+            log_updates[index_log_pos].pos = transform.position;
+            log_updates[index_log_pos].element_number = index_log_pos;
+            log_updates[index_log_pos].caduto = Caduta_in_corso;
+
+            index_log_pos++;
+        }
+        else
+        {
+            textElement.text = "Max index reached";
+        }
+    }
+    void FlipPlayer()
+    {
+        
+        if (!mouse_click_not_processed)
+        {
+
+            if (xInput < -0f)
+            {
+                sp.sprite = spriteArrayLeft[0];
+            }
+            else if (xInput > 0f)
+            {
+                sp.sprite = spriteArrayRight[0];
+            }
+
+            if (yInput < -0f)
+            {
+                sp.sprite = spriteArrayDown[0];
+            }
+            else if (yInput > 0f)
+            {
+                sp.sprite = spriteArrayUp[0];
+            }
+        }
+        else
+        {
+            float err_x, err_y, t_x, t_y;
+            //transform.position = Vector2.MoveTowards(transform.position, targetpos, 0.3f);
+            err_x = targetpos_mouse.x - transform.position.x;
+            err_y = targetpos_mouse.y - transform.position.y;
+
+            if (Math.Abs(err_x) > Math.Abs(err_y))
+            {
+
+                if (err_x > 0f)
+                {
+                    sp.sprite = spriteArrayRight[0];
+                }
+                if (err_x < 0f)
+                {
+                    sp.sprite = spriteArrayLeft[0];
+                }
+            }
+            else
+            {
+                if (err_y > 0f)
+                {
+                    sp.sprite = spriteArrayUp[0];
+                }
+                if (err_y < 0f)
+                {
+                    sp.sprite = spriteArrayDown[0];
+                }
+
+
+            }
+        }
+
+
+
+
+
+    }
+    
+    void check_timer_caduta()
+    {
         if (Caduta_in_corso)
         {
             //Timer
@@ -83,165 +242,9 @@ public class Player : MonoBehaviour
                 timer_caduta = 0;
                 textElement.text = "";
             }
-
-        }
-        else
-        {
-            if (Input.GetMouseButtonDown(0))
-            {
-                targetpos = mousePos;
-                mouse_click_not_processed = true;
-            }
-            if (Input.GetMouseButtonUp(0))
-            {
-                mouse_click_not_processed = false;
-            }
-        }
-
-        
-
-    }
-    private void FixedUpdate()
-    {
-
-        if (!Caduta_in_corso)
-        {
-            //Questa funzione viene eseguita anche se non ci sono update
-            xInput = Input.GetAxis("Horizontal");
-            yInput = Input.GetAxis("Vertical");
-
-
-            transform.Translate(xInput * moveSpeed, yInput * moveSpeed, 0);
-
-            if (mouse_click_not_processed)
-            {
-                ClickToMove();
-                //mouse_click_not_processed = false;
-            }
-
-
-
-            PlatformerMove();
-
-
-            FlipPlayer();
-        }
-
-        if (index_log_pos< max_length_array_log)
-        {
-            //log_positions[index_log_pos] = transform.position;
-            log_updates[index_log_pos].pos = transform.position;
-            log_updates[index_log_pos].element_number = index_log_pos;
-            log_updates[index_log_pos].caduto=Caduta_in_corso;
-
-            index_log_pos++;
-        }
-        else
-        {
-            textElement.text = "Max index reached";
         }
 
     }
-    bool ClickToMove()
-    {
-        if (targetpos.x > 4f || targetpos.x < -4f )
-        {
-            mouse_click_not_processed = false;
-            return false;
-            
-        }
-        /*if (targetpos.y > 200f || targetpos.y < -600f)
-        {
-            return;
-        }*/
-
-        float err_x, err_y,t_x,t_y;
-        //transform.position = Vector2.MoveTowards(transform.position, targetpos, 0.3f);
-        err_x = targetpos.x - transform.position.x;
-        err_y = targetpos.y - transform.position.y;
-        
-        if (Math.Abs(err_x) > Math.Abs(err_y))
-        {
-
-            if (err_x > 0f)
-            {
-                sp.sprite = spriteArrayRight[0];
-            }
-            if (err_x < 0f)
-            {
-                sp.sprite = spriteArrayLeft[0];
-            }
-        }
-        else
-        {
-            if (err_y > 0f)
-            {
-                sp.sprite = spriteArrayUp[0];
-            }
-            if (err_y < 0f)
-            {
-                sp.sprite = spriteArrayDown[0];
-            }
-
-
-        }
-
-        /*
-        t_x = err_x * moveSpeed;
-        t_y = err_y * moveSpeed;
-        
-
-        if (t_x > threshold_mouse_speed)
-        {
-            t_x = threshold_mouse_speed;
-        }
-        if (t_x < -threshold_mouse_speed)
-        {
-            t_x = -threshold_mouse_speed;
-        }
-        if (t_y> threshold_mouse_speed)
-        {
-            t_y = threshold_mouse_speed;
-        }
-        if (t_y < -threshold_mouse_speed)
-        {
-            t_y = -threshold_mouse_speed;
-        }
-
-        */
-        //transform.Translate(t_x, t_y, 0);
-        transform.position = Vector3.MoveTowards(transform.position, targetpos, moveSpeed*Time.deltaTime);
-        return true;
-    }
-
-    void PlatformerMove()
-    {
-        rb.velocity = new Vector2(moveSpeed * xInput, moveSpeed * yInput);
-
-    }
-
-    void FlipPlayer()
-    {
-        if(rb.velocity.x < -0f)
-        {
-            sp.sprite = spriteArrayLeft[0];
-        }
-        else if (rb.velocity.x > 0f)
-        {
-            sp.sprite = spriteArrayRight[0];
-        }
-
-        if (rb.velocity.y < -0f)
-        {
-            sp.sprite = spriteArrayDown[0];
-        }
-        else if (rb.velocity.y > 0f)
-        {
-            sp.sprite = spriteArrayUp[0];
-        }
-    }
-    
-  
     void TaskOnClick_caduta()
     {
         Debug.Log("You have clicked the button!");
