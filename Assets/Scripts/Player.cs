@@ -15,6 +15,11 @@ public class Player : MonoBehaviour
         public int element_number;
         public bool caduto;
     }
+    struct distanza_beacons_struct
+    {
+        public float beacon_cucina;
+        public float beacon_sala;
+    }
 
     int max_length_array_log = 1000000;
     int index_log_pos=0;
@@ -24,8 +29,9 @@ public class Player : MonoBehaviour
     public Button ButtonCaduta;
     public Button ButtonSalva;
     public float Durata_caduta=3f;
-
-
+    public SpriteRenderer beacon_cucina;
+    public SpriteRenderer beacon_sala;
+    public bool debug_on=false;
     float xInput, yInput;
     Vector2[] log_positions;
     Vector2 targetpos_mouse;
@@ -38,7 +44,7 @@ public class Player : MonoBehaviour
     bool Caduta_in_corso = false;
     double timer_caduta = 0f;
     log_struct[] log_updates;
-
+    distanza_beacons_struct distanza_Beacons;
 
     private void Awake()
     {
@@ -61,6 +67,7 @@ public class Player : MonoBehaviour
         ButtonSalva.onClick.AddListener(TaskOnClick_salva);
         //log_positions = new Vector2[max_length_array_log];
         log_updates = new log_struct[max_length_array_log];
+        distanza_Beacons = new distanza_beacons_struct();
         
     }
 
@@ -78,6 +85,9 @@ public class Player : MonoBehaviour
     private void FixedUpdate()
     {//Questa funzione viene eseguita anche se non ci sono update
 
+        
+        aggiorna_distanze_beacons();
+
         check_timer_caduta();
         
         if_arrows_click_move();
@@ -91,8 +101,15 @@ public class Player : MonoBehaviour
 
 
     }
+    void aggiorna_distanze_beacons()
+    {
+        distanza_Beacons.beacon_cucina = calcola_potenza_beacon(beacon_cucina);
+        distanza_Beacons.beacon_sala = calcola_potenza_beacon(beacon_sala);
+
+    }
     bool if_arrows_click_move()
     {
+
         if (Caduta_in_corso)
             return false;
 
@@ -227,6 +244,52 @@ public class Player : MonoBehaviour
 
     }
     
+    float distanza_euclidea(Vector3 a,Vector3 b)
+    {
+        float d_x = (a.x - b.x);
+        float d_y = (a.y - b.y);
+        return (float)(Math.Sqrt((double)(d_x * d_x + d_y * d_y)));
+    }
+    Vector2 direzione_tra_due_punti(Vector3 a,Vector3 b)
+    {
+        return b-a;
+    }
+    float calcola_potenza_beacon(SpriteRenderer beacon)
+    {
+        float K=1,dist_beacon;
+        int cont=0;
+        
+        print_debug("Calcolo la distanza da beacon: " + beacon.name);
+        dist_beacon = distanza_euclidea(beacon.transform.position, transform.position);
+        Vector2 dir_ = direzione_tra_due_punti(transform.position, beacon.transform.position);
+        if(debug_on)    
+            Debug.DrawRay(transform.position, dir_ * 10f, Color.red);
+        RaycastHit2D[] hit = new RaycastHit2D[10];
+        hit = Physics2D.RaycastAll(transform.position, dir_, dist_beacon);
+
+        //stampa_su_debug1(distanza_Beacons.beacon_cucina.ToString());
+        for (int i = 0; i < hit.Length; i++)
+        {
+
+            if (hit[i])
+            {
+                if (hit[i].collider.name != beacon.name && hit[i].collider.name != "Player")
+                {
+                    print_debug(i.ToString() + "- Collisione:" + hit[i].collider.name);
+                    cont++;
+                }
+
+            }
+        }
+        K = 1 - 0.1f * cont;
+
+        print_debug("Oggetti esterni rilevati:" + cont.ToString());
+        print_debug("Distanza effettiva:" + dist_beacon);
+        print_debug("Distanza con rumore:" + dist_beacon * K);
+        return dist_beacon * K;  
+        
+    }
+    
     void check_timer_caduta()
     {
         if (Caduta_in_corso)
@@ -250,7 +313,7 @@ public class Player : MonoBehaviour
         Debug.Log("You have clicked the button!");
         Caduta_in_corso = true; 
         timer_caduta = 0;
-        textElement.text = "Caduto";
+        stampa_su_debug1("Caduto");
         mouse_click_not_processed = false;
     }
     void TaskOnClick_salva()
@@ -338,5 +401,16 @@ public class Player : MonoBehaviour
         xmlTextWriter.Close();
 
 
+    }
+    void stampa_su_debug1(string x)
+    {
+        textElement.text = x;
+    }
+    void print_debug(string s)
+    {
+        if (debug_on)
+        {
+            Debug.Log(s);
+        }
     }
 }
