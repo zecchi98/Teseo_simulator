@@ -1,11 +1,15 @@
+
+using System.Xml.Schema;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Xml;
-using System.Xml.Schema;
 using UnityEngine;
 using System;
+using System.Net;
+using System.Net.Http;
+using System.Threading.Tasks;
 using UnityEngine.UI;
 public class Player : MonoBehaviour
 {
@@ -14,6 +18,7 @@ public class Player : MonoBehaviour
         public Vector2 pos;
         public int element_number;
         public bool caduto;
+        public distanza_beacons_struct distanza_beacons;
     }
     struct distanza_beacons_struct
     {
@@ -45,7 +50,7 @@ public class Player : MonoBehaviour
     double timer_caduta = 0f;
     log_struct[] log_updates;
     distanza_beacons_struct distanza_Beacons;
-
+    int prova_asyinc = 0;
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -67,10 +72,9 @@ public class Player : MonoBehaviour
         ButtonSalva.onClick.AddListener(TaskOnClick_salva);
         //log_positions = new Vector2[max_length_array_log];
         log_updates = new log_struct[max_length_array_log];
-        distanza_Beacons = new distanza_beacons_struct();
+        distanza_Beacons = new distanza_beacons_struct(); 
         
     }
-
     // Update is called once per frame
     void Update()
     {
@@ -172,6 +176,7 @@ public class Player : MonoBehaviour
             log_updates[index_log_pos].pos = transform.position;
             log_updates[index_log_pos].element_number = index_log_pos;
             log_updates[index_log_pos].caduto = Caduta_in_corso;
+            log_updates[index_log_pos].distanza_beacons =distanza_Beacons;
 
             index_log_pos++;
         }
@@ -334,15 +339,29 @@ public class Player : MonoBehaviour
     //ELIMINARE POSSIBILITA' DI CLICCARE NELLA ZONA DEI PULSANTI
     void crea_e_salva_xml()
     {
+        int max_length_file_position = 100;
+
+        int cont_num_file_pos = 1;
+        int t = index_log_pos;
+        do {
+            t = t - max_length_file_position;
+            if (t > 0)
+            {
+                cont_num_file_pos++;
+            }
+        } while (t>0);
+
+
         DateTime dt = DateTime.Now;
 
         TimeSpan t_durata_script= dt.Subtract(dt_inizio);
 
-
-        string data_str=String.Format("{0:d-M-yyyy HH-mm-ss}", dt);
+        string data_str=String.Format("{0:dd-MM-yyyy HH-mm-ss}", dt);
         string filename = "C:\\Users\\zecch\\Desktop\\Zeck\\TESEO\\Documenti\\XML_OUTPUT\\";
-        filename = filename + data_str + ".xml";
-        XmlTextWriter xmlTextWriter = new XmlTextWriter(filename, System.Text.Encoding.UTF8);
+        filename = filename + data_str;
+        string main_filename = filename + " - main.xml";
+        string pre_filename_pos = filename + " - pos ";
+        XmlTextWriter xmlTextWriter = new XmlTextWriter(main_filename, System.Text.Encoding.UTF8);
         xmlTextWriter.Formatting = Formatting.Indented;
         xmlTextWriter.WriteStartDocument();
         xmlTextWriter.WriteComment("Creating an xml file using C#");
@@ -368,37 +387,112 @@ public class Player : MonoBehaviour
         xmlTextWriter.WriteElementString("Milliseconds", t_durata_script.Milliseconds.ToString());
         xmlTextWriter.WriteEndElement();
 
-        xmlTextWriter.WriteStartElement("Eventi");
 
-        if (log_updates.Length != 0)
+
+
+        xmlTextWriter.WriteStartElement("FILES");
+        for(int i = 1; i <= cont_num_file_pos; i++)
         {
-            for (int i = 0; i < index_log_pos; i++)
-            {
-                xmlTextWriter.WriteStartElement("Evento");
-                /*
-                xmlTextWriter.WriteStartElement("Position");
-                xmlTextWriter.WriteElementString("x", log_positions[i].x.ToString());
-                xmlTextWriter.WriteElementString("y", log_positions[i].y.ToString());
-                xmlTextWriter.WriteEndElement();*/
-
-                xmlTextWriter.WriteElementString("Element number", log_updates[i].element_number.ToString());
-                xmlTextWriter.WriteElementString("Caduta in corso", log_updates[i].caduto.ToString());
-
-                xmlTextWriter.WriteStartElement("Position");
-                xmlTextWriter.WriteElementString("x", log_updates[i].pos.x.ToString());
-                xmlTextWriter.WriteElementString("y", log_updates[i].pos.y.ToString());
-                xmlTextWriter.WriteEndElement(); 
-
-                
-                
-                xmlTextWriter.WriteEndElement();
-            }
+            xmlTextWriter.WriteElementString("Posizioni " + i.ToString(), pre_filename_pos + i.ToString() + ".xml");
         }
+
         xmlTextWriter.WriteEndElement();
-        xmlTextWriter.WriteEndElement();
+        
+        xmlTextWriter.WriteEndElement();//Unity debug
         xmlTextWriter.WriteEndDocument();
         xmlTextWriter.Flush();//terminate stream of bytes
         xmlTextWriter.Close();
+
+        //FILE EVENTI
+        for (int num_file_pos = 1; num_file_pos <= cont_num_file_pos; num_file_pos++)
+        {
+            xmlTextWriter = new XmlTextWriter(pre_filename_pos + num_file_pos.ToString() + ".xml", System.Text.Encoding.UTF8);
+            xmlTextWriter.Formatting = Formatting.Indented;
+            xmlTextWriter.WriteStartDocument();
+            xmlTextWriter.WriteComment("Creating an xml file using C#");
+
+            xmlTextWriter.WriteStartElement("UnityDebug");
+
+            xmlTextWriter.WriteElementString("Num Eventi Registrati", index_log_pos.ToString()); //da cambiare con index giusto
+
+            xmlTextWriter.WriteStartElement("Data Registrazione");
+            xmlTextWriter.WriteElementString("Year", dt.Year.ToString());
+            xmlTextWriter.WriteElementString("Month", dt.Month.ToString());
+            xmlTextWriter.WriteElementString("Day", dt.Day.ToString());
+            xmlTextWriter.WriteElementString("Hour", dt.Hour.ToString());
+            xmlTextWriter.WriteElementString("Minute", dt.Minute.ToString());
+            xmlTextWriter.WriteElementString("Second", dt.Second.ToString());
+            xmlTextWriter.WriteEndElement();
+
+            xmlTextWriter.WriteStartElement("Durata Registrazione"); // da aggiornare con durata effettiva del file
+            xmlTextWriter.WriteElementString("Days", t_durata_script.Days.ToString());
+            xmlTextWriter.WriteElementString("Hours", t_durata_script.Hours.ToString());
+            xmlTextWriter.WriteElementString("Minutes", t_durata_script.Minutes.ToString());
+            xmlTextWriter.WriteElementString("Seconds", t_durata_script.Seconds.ToString());
+            xmlTextWriter.WriteElementString("Milliseconds", t_durata_script.Milliseconds.ToString());
+            xmlTextWriter.WriteEndElement();
+
+
+
+
+            xmlTextWriter.WriteStartElement("FILES");
+
+            xmlTextWriter.WriteElementString("Main", filename + " - main.xml");
+
+            for (int k = 1; k <= cont_num_file_pos; k++)
+            {
+                xmlTextWriter.WriteElementString("Posizioni " + k.ToString(), pre_filename_pos + k.ToString() + ".xml");
+            }
+
+            xmlTextWriter.WriteEndElement();
+            
+            xmlTextWriter.WriteStartElement("Eventi");
+
+            if (log_updates.Length != 0)
+            {
+                int end_of_array=0;
+                int start_of_array = 0;
+
+                start_of_array = (num_file_pos - 1) * max_length_file_position;
+
+                if (num_file_pos==cont_num_file_pos)
+                {
+                    end_of_array = index_log_pos;
+                }
+                else
+                {
+                    end_of_array = start_of_array + max_length_file_position;
+                }
+
+                for (int i = start_of_array; i < end_of_array; i++)
+                {
+                    xmlTextWriter.WriteStartElement("Evento");
+
+                    xmlTextWriter.WriteElementString("Element number", log_updates[i].element_number.ToString());
+                    xmlTextWriter.WriteElementString("Caduta in corso", log_updates[i].caduto.ToString());
+
+                    xmlTextWriter.WriteStartElement("Position");
+                    xmlTextWriter.WriteElementString("x", log_updates[i].pos.x.ToString());
+                    xmlTextWriter.WriteElementString("y", log_updates[i].pos.y.ToString());
+                    xmlTextWriter.WriteEndElement();
+
+
+                    xmlTextWriter.WriteStartElement("Distanza Beacons");
+                    xmlTextWriter.WriteElementString("Cucina", log_updates[i].distanza_beacons.beacon_cucina.ToString());
+                    xmlTextWriter.WriteElementString("Sala", log_updates[i].distanza_beacons.beacon_sala.ToString());
+                    xmlTextWriter.WriteEndElement();
+
+                    xmlTextWriter.WriteEndElement();
+                }
+            }
+            xmlTextWriter.WriteEndElement();//chiude eventi
+            
+            xmlTextWriter.WriteEndElement();//Unity debug
+            xmlTextWriter.WriteEndDocument();
+            xmlTextWriter.Flush();//terminate stream of bytes
+            xmlTextWriter.Close();
+
+        }
 
 
     }
@@ -413,4 +507,7 @@ public class Player : MonoBehaviour
             Debug.Log(s);
         }
     }
+
+    
+
 }
