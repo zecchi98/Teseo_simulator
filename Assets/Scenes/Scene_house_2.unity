@@ -10449,6 +10449,7 @@ MonoBehaviour:
   ButtonSalva: {fileID: 247798362}
   Button_Calibrazione: {fileID: 1984041517}
   Btn_calibra_stanza: {fileID: 0}
+  Btn_Train: {fileID: 0}
   parla_con_server: 1
   debug_on: 0
   dropdown_calibrazione: {fileID: 0}
@@ -11755,6 +11756,7 @@ MonoBehaviour:
   ButtonSalva: {fileID: 0}
   Button_Calibrazione: {fileID: 0}
   Btn_calibra_stanza: {fileID: 0}
+  Btn_Train: {fileID: 0}
   parla_con_server: 1
   debug_on: 0
   dropdown_calibrazione: {fileID: 0}

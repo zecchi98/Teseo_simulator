@@ -30,7 +30,7 @@ public class Player : MonoBehaviour
     int max_length_array_log = 1000000;
     public float Durata_caduta = 3f;
     float Durata_set_calibrazione = 5f;
-    float limit_max_power_beacon = 1, point_of_change_power_beacon=3.47f;
+    float limit_max_power_beacon = 0.38f, point_of_change_power_beacon=5.98f;
 
     Beacons Beacons_list;
 
@@ -506,24 +506,27 @@ public class Player : MonoBehaviour
 
         //Rendo la distanza non lineare
 
-        if (dist_euclidea > limit_max_power_beacon && dist_euclidea < point_of_change_power_beacon )
-        {
-            potenza = (10.1f - 0.1f*dist_euclidea);
-        }
-        if (dist_euclidea > point_of_change_power_beacon)
-        {
-            potenza = (33.84f / dist_euclidea);
-        }
         if (dist_euclidea < limit_max_power_beacon)
         {
             potenza = 10f;
         }
+        if (dist_euclidea > limit_max_power_beacon && dist_euclidea < point_of_change_power_beacon )
+        {
+            potenza = (10.5f - 1.3f*dist_euclidea);
+        }
+        if (dist_euclidea > point_of_change_power_beacon)
+        {
+            potenza = (136f / dist_euclidea)-20;
+        }
         potenza = potenza * gain;
 
-        K = 1 - 0.3f * cont;
+        if (cont >= 1)
+        {
+            K = 1 - 0.3f;
+        }
         potenza_con_rumore = potenza * K;
 
-        if (potenza_con_rumore < 200000f)
+        if (potenza_con_rumore < 0f)
             potenza_con_rumore = 0f;
 
         
