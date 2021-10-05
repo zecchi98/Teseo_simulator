@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ContentModelStore">
+    <e p="C:\Users\alexs\AppData\Local\JetBrains\Rider2020.2\extResources" t="IncludeRecursive" />
+    <e p="C:\Users\alexs\AppData\Local\JetBrains\Rider2020.2\resharper-host\Local\Transient\Rider\v202\SolutionCaches\_Teseo_simulator.-1436010674.00" t="ExcludeRecursive" />
+    <e p="D:\Teseo\Projects\Teseo_simulator" t="IncludeRecursive">
+      <e p="Assembly-CSharp.csproj" t="IncludeRecursive" />
+      <e p="Assets" t="Include">
+        <e p="Beacon.cs" t="Include" />
+        <e p="Scripts" t="Include">
+          <e p="ChangeSceneOnClick.cs" t="Include" />
+          <e p="Exit_script.cs" t="Include" />
+          <e p="Player.cs" t="Include" />
+          <e p="ShowText.cs" t="Include" />
+        </e>
+      </e>
+      <e p="obj" t="ExcludeRecursive" />
+      <e p="Packages" t="ExcludeRecursive" />
+      <e p="Temp\Bin" t="ExcludeRecursive" />
+      <e p="Teseo_simulator.sln" t="IncludeFlat" />
+    </e>
+  </component>
+</project>

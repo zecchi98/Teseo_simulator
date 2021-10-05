@@ -445,15 +445,8 @@ public class Player : MonoBehaviour
                 {
                     sp.sprite = spriteArrayDown[0];
                 }
-
-
             }
         }
-
-
-
-
-
     }
 
     float distanza_euclidea(Vector3 a, Vector3 b)
@@ -477,12 +470,17 @@ public class Player : MonoBehaviour
 
 
         SpriteRenderer beacon = beacon_obj;
+        //GameObject objBeacon = beacon.transform.parent.gameObject;
+        Beacon.BeaconPowers pwr = beacon.transform.gameObject.GetComponent<Beacon>().power;
+        
+        print_debug("Beacon Power: " + pwr);
 
-        float K = 1, gain = 100000, dist_beacon,dist_euclidea,potenza=0, potenza_con_rumore;
+        float K = 1, gain = 5 * 100000, dist_beacon, dist_euclidea, potenza = 0, potenza_con_rumore;
         int cont = 0;
 
         print_debug("Calcolo la distanza da beacon: " + beacon.name);
-        dist_euclidea = distanza_euclidea(beacon.transform.position, transform.position);
+        //dist_euclidea = distanza_euclidea(beacon.transform.position, transform.position);
+        dist_euclidea = Vector3.Distance(beacon.transform.position, transform.position);
         Vector2 dir_ = direzione_tra_due_punti(transform.position, beacon.transform.position);
         if (debug_on)
             Debug.DrawRay(transform.position, dir_ * 10f, Color.red);
@@ -506,10 +504,13 @@ public class Player : MonoBehaviour
 
         //Rendo la distanza non lineare
 
-        if (dist_euclidea < limit_max_power_beacon)
+        //potenza = (float) (Math.Log10(dist_euclidea) / Math.Log10(0.25)) + pwr;
+        potenza = (float) 10.0f / (0.7f * dist_euclidea) - ((float) pwr);
+        if (potenza > 10.0f)
         {
-            potenza = 10f;
+            potenza = 10.0f;
         }
+        /*
         if (dist_euclidea > limit_max_power_beacon && dist_euclidea < point_of_change_power_beacon )
         {
             potenza = (10.5f - 1.3f*dist_euclidea);
@@ -518,7 +519,8 @@ public class Player : MonoBehaviour
         {
             potenza = (136f / dist_euclidea)-20;
         }
-        potenza = potenza * gain;
+        */
+        potenza *= gain;
 
         if (cont >= 1)
         {
@@ -526,17 +528,17 @@ public class Player : MonoBehaviour
         }
         potenza_con_rumore = potenza * K;
 
-        if (potenza_con_rumore < 0f)
-            potenza_con_rumore = 0f;
-
+        if (potenza_con_rumore < 0.0f)
+        {
+            potenza_con_rumore = 0.0f;
+        }
         
-
         print_debug("Oggetti esterni rilevati:" + cont.ToString());
         print_debug("Distanza effettiva:" + dist_euclidea);
         print_debug("Potenza effettiva" + potenza);
         print_debug("Potenza con rumore" + potenza_con_rumore);
+        
         return potenza_con_rumore;
-
     }
 
     void check_timer_caduta()
@@ -578,7 +580,7 @@ public class Player : MonoBehaviour
         }
         else
         {
-            Debug.Log("Non puoi salvare mentre una caduta è in corso");
+            Debug.Log("Non puoi salvare mentre una caduta ï¿½ in corso");
 
         }
         */
@@ -606,7 +608,7 @@ public class Player : MonoBehaviour
 
     void TaskOnClick_inattivita()
     {
-        Debug.Log("Inattività detected");
+        Debug.Log("Inattivitï¿½ detected");
         chiama_server_inactivity();
     }
 
